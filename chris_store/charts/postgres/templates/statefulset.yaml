@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres # has to match .spec.template.metadata.labels
+  serviceName: "postgres"
+  replicas: 1 # by default is 1
+  minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        app: postgres # has to match .spec.selector.matchLabels
+    spec:
+      serviceAccountName: postgres-sa
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: postgres
+        image: postgres:13
+        ports:
+        - containerPort: 5432
+          name: postgress
+        env:
+        - name: POSTGRES_DB
+          value: {{ .Values.db }}
+        - name: POSTGRES_USER
+          value: {{ .Values.user }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretname }}
+              key: password
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storageClassName }}
+      resources:
+        requests:
+          storage: 1Gi

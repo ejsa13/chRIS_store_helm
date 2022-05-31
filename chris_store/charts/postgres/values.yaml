@@ -1,0 +1,4 @@
+db: chris_store_db
+username: chris
+secretname: postgres
+storageClassName: gp2

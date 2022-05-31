@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: swift
+spec:
+  selector:
+    matchLabels:
+      app: swift # has to match .spec.template.metadata.labels
+  serviceName: "swift"
+  replicas: 1 # by default is 1
+  minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        app: swift # has to match .spec.selector.matchLabels
+    spec:
+      serviceAccountName: swift-sa
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: swift
+        image: fnndsc/docker-swift-onlyone
+        ports:
+        - containerPort: 8080
+          name: tcp-8080
+        env:
+        - name: SWIFT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretname }}
+              key: username
+        - name: SWIFT_KEY
+          value: {{ .Values.key }}
+        volumeMounts:
+        - name: data
+          mountPath: /srv
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storageClassName }}
+      resources:
+        requests:
+          storage: 1Gi

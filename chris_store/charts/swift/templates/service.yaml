@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: swift
+  labels:
+    app: swift
+spec:
+  type: ClusterIP
+  selector:
+    app: swift
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: tcp-8080

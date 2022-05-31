@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chris_store.fullname" . }}
+  labels:
+    {{- include "chris_store.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "chris_store.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "chris_store.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "chris_store.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8010
+              protocol: TCP
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: {{ .Values.django.settingsModule | quote }}
+            - name: DJANGO_DB_MIGRATE
+              value: {{ .Values.django.dbMigrate | quote }}
+            - name: DJANGO_ALLOWED_HOSTS
+              value: {{ .Values.django.allowedHosts | quote }}
+            - name: DJANGO_SECRET_KEY
+              value: {{ .Values.django.secretKey | quote }}
+            - name: DJANGO_CORS_ORIGIN_ALLOW_ALL
+              value: {{ .Values.django.corsOriginAllowAll | quote }}
+            - name: DJANGO_CORS_ORIGIN_WHITELIST
+              value: {{ .Values.django.corsOriginsWhitelist | quote }}
+            - name: DJANGO_SECURE_PROXY_SSL_HEADER
+              value: {{ .Values.django.secureProxySslHeader | quote }}
+            - name: DJANGO_USE_X_FORWARDED_HOST
+              value: {{ .Values.django.useXForwardedHost | quote }}
+            - name: DATABASE_HOST
+              value: {{ .Values.django.dbHost | quote }}
+            - name: DATABASE_PORT
+              value: {{ .Values.django.dbPort | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.db }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.user | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.secretname }}
+                  key: password
+            - name: SWIFT_AUTH_URL
+              value: {{ .Values.swift.authUrl | quote }}
+            - name: SWIFT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.swift.secretname }}
+                  key: username
+            - name: SWIFT_KEY
+              value: {{ .Values.swift.key }}
+            - name: SWIFT_CONTAINER_NAME
+              value: {{ .Values.swift.containername }}          
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
