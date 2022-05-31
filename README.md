@@ -1,7 +1,7 @@
 # chRIS_store_helm
 helm charts for chRIS store backend and ui.
 
-postgres and swift are dependency chart for the chRIS store backend. If deploying in OCP, serviceaccounts for postgres (postres-sa), swift (swift-sa) and chRIS should have "anyuid" scc on it. The backend and fronted uses the same service account.
+postgres and swift are dependency chart for the chRIS store backend. If deploying in OCP, serviceaccounts for postgres (postres-sa), swift (swift-sa) and chRIS should have "anyuid" scc on it. 
 
 Images are stored in quay.io/chrisproject
 
